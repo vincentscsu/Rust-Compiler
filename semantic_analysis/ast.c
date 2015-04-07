@@ -5,6 +5,17 @@
 #include <stdbool.h>
 #include <assert.h>
 #include "ast.h"
+#include "env.h"
+
+/*variables for typecheck*/
+int q = 0;
+int i = 0;
+int test = 0;
+int test2 = 0;
+int test3 = 0;
+const char *enumStructDefs[1000];
+const char *functDefs[1000];
+/*-----------------------*/
 
 static void print_indent(void);
 static void print_head(const char* head);
@@ -162,6 +173,8 @@ void item_destroy(struct item* item) {
 
       free(item);
 }
+
+//intercept the output and do typecheck
 static void item_print(struct item* item) {
       if (!item) return;
 
@@ -169,6 +182,26 @@ static void item_print(struct item* item) {
             case ITEM_FN_DEF:
                   print_head("fn-def");
                   symbol_print(item->id);
+                  
+                  //check duplicate function names
+            	  int j = 0;
+        		  for (j = 0; j <= i; j++) {
+                      if (functDefs[j] == symbol_to_str(item->id)) {
+                        	printf("\nError, duplicate function names on '%s'\n", functDefs[j]);
+				            exit(0);
+		              }
+                  }
+                  
+                  //check if main function exists
+        		  functDefs[i] = symbol_to_str(item->id);
+        		  if (strcmp(functDefs[i], "main") == 0)
+                      test = 1;
+        		  if ((strcmp(functDefs[i], "main") == 0) && ((item->fn_def.params)!= NULL))
+		              test2 = 1;
+        		  if ((strcmp(functDefs[i], "main") == 0) && ((item->fn_def.ret)!= NULL))
+                      test3 = 1;
+          		  i++;
+
                   if (item->fn_def.params) {
                         print_head("fn-params");
                         g_list_foreach(item->fn_def.params, (GFunc)pair_print, NULL);
@@ -180,6 +213,19 @@ static void item_print(struct item* item) {
             case ITEM_ENUM_DEF:
                   print_head("enum-def");
                   symbol_print(item->id);
+                  
+                  //check duplicate enum or struct names 
+                  int a = 0;
+                  for (a = 0; a <= q; a++) {
+                      if (enumStructDefs[a] == symbol_to_str(item->id)){ 
+                          printf("\nError, duplicate enum/struct names on '%s'\n", enumStructDefs[a]);
+                          exit(0);
+                      }
+                  }
+                  //get next value
+        		  enumStructDefs[q] = symbol_to_str(item->id);
+                  q++;
+
                   print_head("enum-ctor-defs");
                   g_list_foreach(item->enum_def.ctors, (GFunc)pair_print, NULL);
                   print_rparen();
@@ -187,6 +233,19 @@ static void item_print(struct item* item) {
             case ITEM_STRUCT_DEF:
                   print_head("struct-def");
                   symbol_print(item->id);
+                  
+                  //check duplicate enum or struct names
+                  int b = 0;
+                  for (b = 0; b <= q; b++) { 
+                      if (enumStructDefs[b] == symbol_to_str(item->id))	{ 
+                          printf("\nError, duplicate enum/struct names on '%s'\n", enumStructDefs[b]);
+             		  exit(0);
+            		  }
+                  }
+                  //get next value
+                  enumStructDefs[q] = symbol_to_str(item->id);
+                  q++;
+                  
                   print_head("field-defs");
                   g_list_foreach(item->struct_def.fields, (GFunc)pair_print, NULL);
                   print_rparen();
@@ -194,6 +253,7 @@ static void item_print(struct item* item) {
       }
       print_rparen();
 }
+
 void item_print_pretty(struct item* item) {
       if (!item) return;
 
@@ -938,11 +998,6 @@ static void type_print(struct type* type) {
 void type_print_pretty(struct type* type) {
       if (!type) return;
 
-      if (type->kind == TYPE_ERROR
-            || type->kind == TYPE_OK
-            || type->kind == TYPE_DIV)
-            return;
-
       switch (type->kind) {
             case TYPE_ERROR:
                   printf("ERROR!");
@@ -1108,5 +1163,41 @@ static void pair_print(struct pair* pair) {
                   print_rparen();
                   break;
       }
+}
+
+//check if main exists
+void maincheck(void)
+{
+	if (test == 0)
+	{
+		printf("Error, no main function.\n");
+		exit(0);
+	}
+	else if (test2 == 1)
+	{
+		printf("Error, invalid main. Main has no paramaters\n");
+		exit(0);
+	}
+	else if (test3 == 1)
+	{
+		printf("Error, invalid main. Main has no type\n");
+		exit(0);
+	}
+	else
+		printf("Ok.\n");
+/*
+	int k = 0;
+	int test = 0;
+	const char *testing;
+	for (k = 0; k <= i; k++)
+	{
+		testing = functDefs[k];
+		if (strcmp(testing[k], "main") == 0)
+			test = 1;
+	}	
+	if (test == 0)
+	{
+		printf("Error, no main function\n");
+	}*/
 }
 

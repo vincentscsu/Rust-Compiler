@@ -20,4 +20,6 @@ int main(int argc, char **argv) {
             crate_destroy(crate);
             yylex_destroy();
       }
+      //add function to check if main exists
+      maincheck();
 }

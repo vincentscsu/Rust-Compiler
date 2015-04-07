@@ -376,4 +376,7 @@ struct pair* field_init(Symbol id, struct exp* exp);
 struct pair* match_arm(GList* pats, struct exp* block);
 void pair_destroy(struct pair* pair);
 
+//check if main function exist
+void maincheck(void);
+
 #endif
